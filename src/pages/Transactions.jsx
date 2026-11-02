@@ -1,0 +1,164 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../services/supabase";
+
+export default function Transactions() {
+  const navigate = useNavigate();
+
+  const [expenses, setExpenses] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadExpenses();
+  }, []);
+
+  async function loadExpenses() {
+    try {
+      setLoading(true);
+
+      // Get current user
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return;
+
+      // Get profile
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("household_id")
+        .eq("id", user.id)
+        .single();
+
+      if (profileError) {
+        console.error(profileError);
+        return;
+      }
+
+      // Get expenses
+      const { data, error } = await supabase
+        .from("expenses")
+        .select("*")
+        .eq("household_id", profile.household_id)
+        .order("expense_date", { ascending: false });
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      setExpenses(data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDelete(id) {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this expense?"
+    );
+
+    if (!confirmed) return;
+
+    const { error } = await supabase
+      .from("expenses")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      alert("Failed to delete expense");
+      console.error(error);
+      return;
+    }
+
+    loadExpenses();
+  }
+
+  if (loading) {
+    return (
+      <div className="p-4">
+        <h2>Transactions</h2>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4">
+      <h2 className="text-xl font-bold mb-4">
+        Transactions
+      </h2>
+
+      {expenses.length === 0 ? (
+        <div className="bg-white p-4 rounded shadow">
+          <p>No expenses found.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {expenses.map((expense) => (
+            <div
+              key={expense.id}
+              className="bg-white p-4 rounded shadow"
+            >
+              <h3 className="font-bold text-lg">
+                {expense.category}
+              </h3>
+
+              <p className="text-2xl font-semibold text-green-600">
+                ${Number(expense.amount).toFixed(2)}
+              </p>
+
+              <div className="mt-3 space-y-1">
+                <p>
+                  <strong>Date:</strong>{" "}
+                  {expense.expense_date}
+                </p>
+
+                <p>
+                  <strong>Paid By:</strong>{" "}
+                  {expense.paid_by_name}
+                </p>
+
+                <p>
+                  <strong>Split Type:</strong>{" "}
+                  {expense.split_type}
+                </p>
+
+                {expense.details && (
+                  <p>
+                    <strong>Details:</strong>{" "}
+                    {expense.details}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={() =>
+                    navigate(
+                      `/edit-expense/${expense.id}`
+                    )
+                  }
+                  className="px-3 py-2 bg-blue-500 text-white rounded"
+                >
+                  Edit
+                </button>
+
+                <button
+                  onClick={() =>
+                    handleDelete(expense.id)
+                  }
+                  className="px-3 py-2 bg-red-500 text-white rounded"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
