@@ -73,13 +73,28 @@ export default function Transactions() {
     loadExpenses();
   }
 
+  // =======================
+  // GROUP BY MONTH (NO TIMEZONE ISSUES)
+  // =======================
   const groupedExpenses = expenses.reduce((groups, expense) => {
-    const date = new Date(expense.expense_date);
+    const [year, month] = expense.expense_date.split("-");
 
-    const monthKey = date.toLocaleString("en-US", {
-      month: "long",
-      year: "numeric",
-    });
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    const monthKey = `${monthNames[parseInt(month, 10) - 1]} ${year}`;
 
     if (!groups[monthKey]) {
       groups[monthKey] = [];
@@ -112,117 +127,102 @@ export default function Transactions() {
           <p>No expenses found.</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {groupedEntries.map(
-            ([month, monthExpenses], index) => {
-              const monthTotal = monthExpenses.reduce(
-                (sum, expense) =>
-                  sum + Number(expense.amount),
-                0
-              );
+        <div className="space-y-8">
+          {groupedEntries.map(([month, monthExpenses]) => {
+            const monthTotal = monthExpenses.reduce(
+              (sum, expense) =>
+                sum + Number(expense.amount),
+              0
+            );
 
-              return (
-                <details
-                  key={month}
-                  open={index === 0}
-                  className="bg-gray-50 rounded shadow"
-                >
-                  <summary className="cursor-pointer p-4 font-semibold text-lg flex justify-between items-center hover:bg-gray-100">
-                    <div>
+            return (
+              <div key={month}>
+                <div className="bg-gray-100 p-4 rounded shadow mb-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-bold">
                       {month}
-                    </div>
+                    </h3>
 
-                    <div className="flex gap-4">
-                      <span className="text-blue-600">
+                    <div className="text-right">
+                      <div className="font-semibold text-green-600">
+                        ${monthTotal.toFixed(2)}
+                      </div>
+
+                      <div className="text-sm text-gray-500">
                         {monthExpenses.length} item
                         {monthExpenses.length !== 1
                           ? "s"
                           : ""}
-                      </span>
-
-                      <span className="text-green-600">
-                        ${monthTotal.toFixed(2)}
-                      </span>
+                      </div>
                     </div>
-                  </summary>
+                  </div>
+                </div>
 
-                  <div className="p-4 space-y-4">
-                    {monthExpenses.map((expense) => (
-                      <div
-                        key={expense.id}
-                        className="bg-white p-4 rounded shadow border"
-                      >
-                        <h3 className="font-bold text-lg">
-                          {expense.category}
-                        </h3>
+                <div className="space-y-4">
+                  {monthExpenses.map((expense) => (
+                    <div
+                      key={expense.id}
+                      className="bg-white p-4 rounded shadow"
+                    >
+                      <h3 className="font-bold text-lg">
+                        {expense.category}
+                      </h3>
 
-                        <p className="text-2xl font-semibold text-green-600">
-                          $
-                          {Number(
-                            expense.amount
-                          ).toFixed(2)}
+                      <p className="text-2xl font-semibold text-green-600">
+                        ${Number(expense.amount).toFixed(2)}
+                      </p>
+
+                      <div className="mt-3 space-y-1">
+                        <p>
+                          <strong>Date:</strong>{" "}
+                          {expense.expense_date}
                         </p>
 
-                        <div className="mt-3 space-y-1">
+                        <p>
+                          <strong>Paid By:</strong>{" "}
+                          {expense.paid_by_name}
+                        </p>
+
+                        <p>
+                          <strong>Split Type:</strong>{" "}
+                          {expense.split_type}
+                        </p>
+
+                        {expense.details && (
                           <p>
-                            <strong>Date:</strong>{" "}
-                            {expense.expense_date}
+                            <strong>Details:</strong>{" "}
+                            {expense.details}
                           </p>
-
-                          <p>
-                            <strong>
-                              Paid By:
-                            </strong>{" "}
-                            {expense.paid_by_name}
-                          </p>
-
-                          <p>
-                            <strong>
-                              Split Type:
-                            </strong>{" "}
-                            {expense.split_type}
-                          </p>
-
-                          {expense.details && (
-                            <p>
-                              <strong>
-                                Details:
-                              </strong>{" "}
-                              {expense.details}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="flex gap-2 mt-4">
-                          <button
-                            onClick={() =>
-                              navigate(
-                                `/edit-expense/${expense.id}`
-                              )
-                            }
-                            className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                          >
-                            Edit
-                          </button>
-
-                          <button
-                            onClick={() =>
-                              handleDelete(
-                                expense.id
-                              )
-                            }
-                            className="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                          >
-                            Delete
-                          </button>
-                        </div>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                </details>
-              );
-            }
-          )}
+
+                      <div className="flex gap-2 mt-4">
+                        <button
+                          onClick={() =>
+                            navigate(
+                              `/edit-expense/${expense.id}`
+                            )
+                          }
+                          className="px-3 py-2 bg-blue-500 text-white rounded"
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            handleDelete(expense.id)
+                          }
+                          className="px-3 py-2 bg-red-500 text-white rounded"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
