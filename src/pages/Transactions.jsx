@@ -73,9 +73,6 @@ export default function Transactions() {
     loadExpenses();
   }
 
-  // =======================
-  // GROUP BY MONTH (NO TIMEZONE ISSUES)
-  // =======================
   const groupedExpenses = expenses.reduce((groups, expense) => {
     const [year, month] = expense.expense_date.split("-");
 
@@ -117,8 +114,8 @@ export default function Transactions() {
   }
 
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold mb-4">
+    <div className="p-4 max-w-4xl mx-auto">
+      <h2 className="text-2xl font-bold mb-6">
         Transactions
       </h2>
 
@@ -137,88 +134,89 @@ export default function Transactions() {
 
             return (
               <div key={month}>
-                <div className="bg-gray-100 p-4 rounded shadow mb-4">
+                <div className="border-b-2 border-gray-300 pb-3 mb-4">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-bold">
-                      {month}
-                    </h3>
+                    <div>
+                      <h3 className="text-xl font-bold">
+                        {month}
+                      </h3>
 
-                    <div className="text-right">
-                      <div className="font-semibold text-green-600">
-                        ${monthTotal.toFixed(2)}
-                      </div>
-
-                      <div className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500">
                         {monthExpenses.length} item
                         {monthExpenses.length !== 1
                           ? "s"
                           : ""}
-                      </div>
+                      </p>
+                    </div>
+
+                    <div className="text-xl font-bold text-green-600">
+                      ${monthTotal.toFixed(2)}
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  {monthExpenses.map((expense) => (
-                    <div
-                      key={expense.id}
-                      className="bg-white p-4 rounded shadow"
-                    >
-                      <h3 className="font-bold text-lg">
-                        {expense.category}
-                      </h3>
+                <div className="space-y-2">
+                  {monthExpenses.map((expense) => {
+                    const title =
+                      expense.details?.trim() ||
+                      expense.category;
 
-                      <p className="text-2xl font-semibold text-green-600">
-                        ${Number(expense.amount).toFixed(2)}
-                      </p>
+                    return (
+                      <div
+                        key={expense.id}
+                        className="bg-white rounded-lg shadow p-3"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="min-w-0 flex-1">
+                            <div className="font-semibold text-gray-900 break-words">
+                              {title}
+                            </div>
 
-                      <div className="mt-3 space-y-1">
-                        <p>
-                          <strong>Date:</strong>{" "}
-                          {expense.expense_date}
-                        </p>
+                            <div className="text-sm text-gray-500 mt-1">
+                              {expense.paid_by_name}
+                              {" • "}
+                              {expense.expense_date}
+                            </div>
 
-                        <p>
-                          <strong>Paid By:</strong>{" "}
-                          {expense.paid_by_name}
-                        </p>
+                            <div className="text-xs text-gray-400 mt-1">
+                              {expense.category}
+                            </div>
+                          </div>
 
-                        <p>
-                          <strong>Split Type:</strong>{" "}
-                          {expense.split_type}
-                        </p>
+                          <div className="ml-4 text-lg font-bold text-green-600 whitespace-nowrap">
+                            $
+                            {Number(
+                              expense.amount
+                            ).toFixed(2)}
+                          </div>
+                        </div>
 
-                        {expense.details && (
-                          <p>
-                            <strong>Details:</strong>{" "}
-                            {expense.details}
-                          </p>
-                        )}
+                        <div className="flex gap-2 mt-3">
+                          <button
+                            onClick={() =>
+                              navigate(
+                                `/edit-expense/${expense.id}`
+                              )
+                            }
+                            className="px-2 py-1 text-sm bg-blue-500 text-white rounded"
+                          >
+                            Edit
+                          </button>
+
+                          <button
+                            onClick={() =>
+                              handleDelete(
+                                expense.id
+                              )
+                            }
+                            className="px-2 py-1 text-sm bg-red-500 text-white rounded"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
-
-                      <div className="flex gap-2 mt-4">
-                        <button
-                          onClick={() =>
-                            navigate(
-                              `/edit-expense/${expense.id}`
-                            )
-                          }
-                          className="px-3 py-2 bg-blue-500 text-white rounded"
-                        >
-                          Edit
-                        </button>
-
-                        <button
-                          onClick={() =>
-                            handleDelete(expense.id)
-                          }
-                          className="px-3 py-2 bg-red-500 text-white rounded"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );
