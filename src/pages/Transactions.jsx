@@ -16,14 +16,12 @@ export default function Transactions() {
     try {
       setLoading(true);
 
-      // Get current user
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
       if (!user) return;
 
-      // Get profile
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("household_id")
@@ -35,7 +33,6 @@ export default function Transactions() {
         return;
       }
 
-      // Get expenses
       const { data, error } = await supabase
         .from("expenses")
         .select("*")
@@ -76,6 +73,25 @@ export default function Transactions() {
     loadExpenses();
   }
 
+  const groupedExpenses = expenses.reduce((groups, expense) => {
+    const date = new Date(expense.expense_date);
+
+    const monthKey = date.toLocaleString("en-US", {
+      month: "long",
+      year: "numeric",
+    });
+
+    if (!groups[monthKey]) {
+      groups[monthKey] = [];
+    }
+
+    groups[monthKey].push(expense);
+
+    return groups;
+  }, {});
+
+  const groupedEntries = Object.entries(groupedExpenses);
+
   if (loading) {
     return (
       <div className="p-4">
@@ -97,66 +113,116 @@ export default function Transactions() {
         </div>
       ) : (
         <div className="space-y-4">
-          {expenses.map((expense) => (
-            <div
-              key={expense.id}
-              className="bg-white p-4 rounded shadow"
-            >
-              <h3 className="font-bold text-lg">
-                {expense.category}
-              </h3>
+          {groupedEntries.map(
+            ([month, monthExpenses], index) => {
+              const monthTotal = monthExpenses.reduce(
+                (sum, expense) =>
+                  sum + Number(expense.amount),
+                0
+              );
 
-              <p className="text-2xl font-semibold text-green-600">
-                ${Number(expense.amount).toFixed(2)}
-              </p>
-
-              <div className="mt-3 space-y-1">
-                <p>
-                  <strong>Date:</strong>{" "}
-                  {expense.expense_date}
-                </p>
-
-                <p>
-                  <strong>Paid By:</strong>{" "}
-                  {expense.paid_by_name}
-                </p>
-
-                <p>
-                  <strong>Split Type:</strong>{" "}
-                  {expense.split_type}
-                </p>
-
-                {expense.details && (
-                  <p>
-                    <strong>Details:</strong>{" "}
-                    {expense.details}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex gap-2 mt-4">
-                <button
-                  onClick={() =>
-                    navigate(
-                      `/edit-expense/${expense.id}`
-                    )
-                  }
-                  className="px-3 py-2 bg-blue-500 text-white rounded"
+              return (
+                <details
+                  key={month}
+                  open={index === 0}
+                  className="bg-gray-50 rounded shadow"
                 >
-                  Edit
-                </button>
+                  <summary className="cursor-pointer p-4 font-semibold text-lg flex justify-between items-center hover:bg-gray-100">
+                    <div>
+                      {month}
+                    </div>
 
-                <button
-                  onClick={() =>
-                    handleDelete(expense.id)
-                  }
-                  className="px-3 py-2 bg-red-500 text-white rounded"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
+                    <div className="flex gap-4">
+                      <span className="text-blue-600">
+                        {monthExpenses.length} item
+                        {monthExpenses.length !== 1
+                          ? "s"
+                          : ""}
+                      </span>
+
+                      <span className="text-green-600">
+                        ${monthTotal.toFixed(2)}
+                      </span>
+                    </div>
+                  </summary>
+
+                  <div className="p-4 space-y-4">
+                    {monthExpenses.map((expense) => (
+                      <div
+                        key={expense.id}
+                        className="bg-white p-4 rounded shadow border"
+                      >
+                        <h3 className="font-bold text-lg">
+                          {expense.category}
+                        </h3>
+
+                        <p className="text-2xl font-semibold text-green-600">
+                          $
+                          {Number(
+                            expense.amount
+                          ).toFixed(2)}
+                        </p>
+
+                        <div className="mt-3 space-y-1">
+                          <p>
+                            <strong>Date:</strong>{" "}
+                            {expense.expense_date}
+                          </p>
+
+                          <p>
+                            <strong>
+                              Paid By:
+                            </strong>{" "}
+                            {expense.paid_by_name}
+                          </p>
+
+                          <p>
+                            <strong>
+                              Split Type:
+                            </strong>{" "}
+                            {expense.split_type}
+                          </p>
+
+                          {expense.details && (
+                            <p>
+                              <strong>
+                                Details:
+                              </strong>{" "}
+                              {expense.details}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex gap-2 mt-4">
+                          <button
+                            onClick={() =>
+                              navigate(
+                                `/edit-expense/${expense.id}`
+                              )
+                            }
+                            className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                          >
+                            Edit
+                          </button>
+
+                          <button
+                            onClick={() =>
+                              handleDelete(
+                                expense.id
+                              )
+                            }
+                            className="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              );
+            }
+          )}
         </div>
       )}
     </div>
