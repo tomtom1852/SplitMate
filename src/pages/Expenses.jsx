@@ -69,8 +69,16 @@ export default function Expenses() {
       return;
     }
 
-    if (!amount || Number(amount) <= 0) {
-      alert("Please enter a valid amount");
+    const amountValue = Number(amount);
+
+    if (
+      !amount ||
+      isNaN(amountValue) ||
+      amountValue <= 0
+    ) {
+      alert(
+        "Please enter a valid numeric amount"
+      );
       return;
     }
 
