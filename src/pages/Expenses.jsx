@@ -118,10 +118,8 @@ export default function Expenses() {
         GOOGLE_SCRIPT_URL,
         {
           method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
+          mode: "no-cors",
+
           body: JSON.stringify({
             expense_date:
               expenseDate,
