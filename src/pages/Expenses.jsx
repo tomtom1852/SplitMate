@@ -82,9 +82,10 @@ export default function Expenses() {
       return;
     }
 
-    const category = categories.find(
-      (c) => c.id === categoryId
-    );
+    const category =
+      categories.find(
+        c => String(c.id) === String(categoryId)
+      );
 
     const { error } = await supabase
       .from("expenses")
@@ -122,6 +123,20 @@ export default function Expenses() {
     }
 
     try {
+      console.log(
+        JSON.stringify({
+          expense_date: expenseDate,
+          amount: Number(amount),
+          category: category?.name,
+          category_type:
+            category?.category_type,
+          details,
+          paid_by_name:
+            profile.display_name,
+          split_type:
+            splitType,
+        })
+      );
       await fetch(
         GOOGLE_SCRIPT_URL,
         {
